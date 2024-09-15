@@ -100,7 +100,7 @@ const mat_math = {
      * @returns {matrix} matrix identity
      */
     make_identity: () => {
-        let m = mat_math.createNewMatrix(4, 4);
+        let m = mat_math.mat_create(4, 4);
         m[0][0] = 1;
         m[1][1] = 1;
         m[2][2] = 1;
@@ -119,12 +119,22 @@ const mat_math = {
         if (!m[3]) m[3] = [0, 0, 0];
         if (!i[3]) i[3] = 0;
 
-        return [
+        let o =  [
             i[0] * m[0][0] + i[1] * m[1][0] + i[2] * m[2][0] + i[3] * m[3][0],
             i[0] * m[0][1] + i[1] * m[1][1] + i[2] * m[2][1] + i[3] * m[3][1],
             i[0] * m[0][2] + i[1] * m[1][2] + i[2] * m[2][2] + i[3] * m[3][2],
             i[0] * m[0][3] + i[1] * m[1][3] + i[2] * m[2][3] + i[3] * m[3][3],
-        ]
+        ];
+
+        let w = i[0] * m[0][3] + i[1] * m[1][3] + i[2] * m[2][3] + m[3][3];
+
+        if(w != 0){
+            o[0] /= w;
+            o[1] /= w;
+            o[2] /= w;
+        }
+
+        return o;
     },
 
     /**
@@ -134,7 +144,7 @@ const mat_math = {
      * @returns {matrix} product of matrices
      */
     mult_mat: (m1, m2) => {
-        let m = mat_math.createNewMatrix(4, 4);
+        let m = mat_math.mat_create(4, 4);
         for (let c = 0; c < 4; c++) {
             for (let r = 0; r < 4; r++) {
                 m[r][c] =
@@ -170,7 +180,7 @@ const mat_math = {
      * @returns {matrix}
      */
     rot_x: (angle) => {
-        let m = matrixMath.createNewMatrix(4, 4);
+        let m = mat_math.mat_create(4, 4);
         m[0][0] = 1;
         m[1][1] = Math.cos(angle);
         m[1][2] = Math.sin(angle);
@@ -187,7 +197,7 @@ const mat_math = {
      * @returns {matrix}
      */
     rot_y: (angle) => {
-        let m = matrixMath.createNewMatrix(4, 4);
+        let m = mat_math.mat_create(4, 4);
         m[0][0] = Math.cos(angle);
         m[0][2] = Math.sin(angle);
         m[1][1] = 1;
@@ -204,7 +214,7 @@ const mat_math = {
      * @returns {matrix}
      */
     rot_z: (angle) => {
-        let m = matrixMath.createNewMatrix(4, 4);
+        let m = mat_math.mat_create(4, 4);
         m[0][0] = Math.cos(angle);
         m[0][1] = Math.sin(angle);
         m[1][0] = -Math.sin(angle);
@@ -223,15 +233,16 @@ const mat_math = {
      * @param {integer} far Far clipping plane
      * @returns {matrix}
      */
-    projection: (fov, aspectRatio, near, far) => {
-        const fovRad = 1 / Math.tan(fov * 0.5 / 180 * Math.PI);
-        let m = mat_math.mat_create(4, 4);
+    projection: (fov, aspect_ratio, near, far) => {
+        let fov_rad = 1 / Math.tan(fov * 0.5 / 180 * Math.PI);
+        let m = mat_math.make_identity();
 
-        m[0][0] = aspectRatio * fovRad;
-        m[1][1] = fovRad;
+        m[0][0] = aspect_ratio / fov_rad;
+        m[1][1] = fov_rad;
         m[2][2] = far / (far - near);
-        m[2][3] = 1;
         m[3][2] = (-far * near) / (far - near);
+        m[2][3] = 1;
+        m[3][3] = 0;
 
         return m;
     }

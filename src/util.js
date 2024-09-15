@@ -56,3 +56,16 @@ function load_obj(text) {
 
     data = new_tris;
 }
+
+/**
+ * Calculates the world matrix
+ * @param {array} rot 
+ * @returns {matrix}
+ */
+function calc_world_mat(rot) {
+    let world_mat = mat_math.make_identity();
+    world_mat = mat_math.mult_mat(mat_math.rot_x(rot[0]), mat_math.rot_y(rot[1]));
+    world_mat = mat_math.mult_mat(world_mat, mat_math.rot_z(rot[2]));
+
+    return world_mat;
+}
