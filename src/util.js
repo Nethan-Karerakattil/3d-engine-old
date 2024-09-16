@@ -5,7 +5,7 @@
  */
 function wireframe(ctx, proj_tris) {
     for (let i = 0; i < proj_tris.length; i++) {
-        ctx.strokeStyle = "#fff";
+        ctx.strokeStyle = "#f00";
 
         ctx.beginPath();
         ctx.moveTo(proj_tris[i][0][0], proj_tris[i][0][1]);
@@ -59,7 +59,8 @@ function load_obj(text) {
 
 /**
  * Calculates the world matrix
- * @param {array} rot 
+ * @param {array} rot Rotation of scene
+ * @param {array} trans Translation of scene
  * @returns {matrix}
  */
 function calc_world_mat(rot) {
@@ -68,4 +69,37 @@ function calc_world_mat(rot) {
     world_mat = mat_math.mult_mat(world_mat, mat_math.rot_z(rot[2]));
 
     return world_mat;
+}
+
+/**
+ * Finds the area of a triangle
+ * @param {array} points An array of points
+ * @returns {integer} area
+ */
+function triangle_area(points) {
+    return Math.abs(
+        points[0][0] * (points[1][1] - points[2][1]) +
+        points[1][0] * (points[2][1] - points[0][1]) +
+        points[2][0] * (points[0][1] - points[1][1])
+    ) / 2;
+}
+
+/**
+ * Creates a buffer
+ * @param {integer} r rows
+ * @param {integer} c columns
+ * @param {integer} init_val initial value
+ * @returns {buffer}
+ */
+function create_buffer(r, c, init_val) {
+    let buffer = [];
+
+    for(let x = 0; x < r; x++){
+        buffer[x] = [];
+        for(let y = 0; y < c; y++){
+            buffer[x][y] = init_val;
+        }
+    }
+
+    return buffer;
 }

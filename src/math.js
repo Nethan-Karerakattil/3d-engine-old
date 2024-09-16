@@ -59,7 +59,7 @@ const vec_math = {
      * @returns {integer} lenth of the vector
      */
     len: (v) => {
-        return Math.sqrt(vec_math.vectorDotProduct(v, v));
+        return Math.sqrt(vec_math.dp(v, v));
     },
 
     /**
@@ -68,7 +68,7 @@ const vec_math = {
      * @returns {vector} Normalized vector
      */
     norm: (v) => {
-        const l = vec_math.vectorLength(v);
+        const l = vec_math.len(v);
         return [v[0] / l, v[1] / l, v[2] / l];
     }
 }
@@ -167,9 +167,9 @@ const mat_math = {
      */
     make_translation: (x, y, z) => {
         let m = mat_math.make_identity();
-        m[3][0] = x;
-        m[3][1] = y;
-        m[3][2] = z;
+        m[1][3] = x;
+        m[2][3] = y;
+        m[3][3] = z;
 
         return m;
     },
