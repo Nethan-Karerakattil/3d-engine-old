@@ -30,6 +30,16 @@ const vec_math = {
     },
 
     /**
+     * Multiplies a vector with an integer
+     * @param {vector} v 
+     * @param {integer} k 
+     * @returns 
+     */
+    mul: (v, k) => {
+        return [v[0] * k, v[1] * k, v[2] * k];
+    },
+
+    /**
      * Performs dot product on 2 vectors
      * @param {vector} v1 vector 1 
      * @param {vector} v2 vector 2
@@ -245,5 +255,70 @@ const mat_math = {
         m[3][3] = 0;
 
         return m;
+    },
+
+    /**
+     * Creates a point at matrix
+     * @param {vector} pos
+     * @param {vector} target 
+     * @param {vector} up 
+     * @returns {matrix} Point at matrix
+     */
+    point_at: (pos, target, up) => {
+        let new_forward = vec_math.norm(vec_math.sub(target, pos));
+        let a = vec_math.mul(new_forward, vec_math.dp(up, new_forward));
+        let new_up = vec_math.norm(vec_math.sub(up, a));
+        let new_right = vec_math.cp(new_up, new_forward);
+
+        let mat = mat_math.mat_create(4, 4);
+        mat[0][0] = new_right[0];
+        mat[1][0] = new_up[0];
+        mat[2][0] = new_forward[0];
+        mat[3][0] = pos[0];
+
+        mat[0][1] = new_right[1];
+        mat[1][1] = new_up[1];
+        mat[2][1] = new_forward[1];
+        mat[3][1] = pos[1];
+
+        mat[0][2] = new_right[2];
+        mat[1][2] = new_up[2];
+        mat[2][2] = new_forward[2];
+        mat[3][2] = pos[2];
+
+        mat[0][3] = new_right[3];
+        mat[1][3] = new_up[3];
+        mat[2][3] = new_forward[3];
+        mat[3][3] = pos[3];
+
+        return mat;
+    },
+
+    /**
+     * Inverts a matrix (only works for rotation/translation matrices)
+     * @param {matrix} m 
+     * @returns {matrix} Inversed matrix
+     */
+    quick_inverse: (m) => {
+        let out = mat_math.mat_create(4, 4);
+
+        out[0][0] = m[0][0];
+        out[1][0] = m[0][1];
+        out[2][0] = m[0][2];
+
+        out[0][1] = m[1][0];
+        out[1][1] = m[1][1];
+        out[2][1] = m[1][2];
+
+        out[0][2] = m[2][0];
+        out[1][2] = m[2][1];
+        out[2][2] = m[2][2];
+
+		out[3][0] = -(m[3][0] * out[0][0] + m[3][1] * out[1][0] + m[3][2] * out[2][0]);
+		out[3][1] = -(m[3][0] * out[0][1] + m[3][1] * out[1][1] + m[3][2] * out[2][1]);
+		out[3][2] = -(m[3][0] * out[0][2] + m[3][1] * out[1][2] + m[3][2] * out[2][2]);
+		out[3][3] = 1;
+
+        return out;
     }
 }

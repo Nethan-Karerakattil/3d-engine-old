@@ -11,8 +11,12 @@ let far_plane = 1000;
 let rot_x = 0;
 let rot_y = 0;
 let rot_z = 0;
-let light_dir = vec_math.norm([0, 0, -1]);
+let light_dir = vec_math.norm([0, 1, -1]);
 let camera_loc = [0, 0, 0];
+let up = [0, 1, 0];
+let look_dir = [0, 0, 1];
+let target = vec_math.add(camera_loc, light_dir);
+
 let max_fps = 60;
 let fps = 0;
 let show_wireframe = false;
@@ -23,23 +27,56 @@ let tri_lighting = [];
 let depth_buffer = create_buffer(canvas.width, canvas.height, Infinity);
 let texture = new Texture("./crate_1.jpg");
 
+let view_mat = mat_math.quick_inverse(mat_math.point_at(camera_loc, target, up));
 let world_mat = calc_world_mat([0, 0, 0]);
 let proj_mat = mat_math.projection(fov, aspect_ratio, near_plane, far_plane);
 
 document.addEventListener("keydown", ({ key }) => {
-    if (key === "1") {
-        rot_x += 0.1;
-        world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
-    }
+    switch(key) {
+        case "1":
+            rot_x += 0.1;
+            world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
+            break;
 
-    if (key === "2") {
-        rot_y += 0.1;
-        world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
-    }
+        case "2":
+            rot_y += 0.1;
+            world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
+            break;
 
-    if (key === "3") {
-        rot_z += 0.1;
-        world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
+        case "3":
+            rot_z += 0.1;
+            world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
+            break;
+
+        case "ArrowUp":
+            camera_loc[1] += 0.1;
+            view_mat = mat_math.quick_inverse(mat_math.point_at(camera_loc, target, up));
+            break;
+
+        case "ArrowDown":
+            camera_loc[1] -= 0.1;
+            view_mat = mat_math.quick_inverse(mat_math.point_at(camera_loc, target, up));
+            break;
+
+        case "ArrowRight":
+            camera_loc[0] += 0.1;
+            view_mat = mat_math.quick_inverse(mat_math.point_at(camera_loc, target, up));
+            break;
+
+        case "ArrowLeft":
+            camera_loc[0] -= 0.1;
+            view_mat = mat_math.quick_inverse(mat_math.point_at(camera_loc, target, up));
+            break;
+
+        case "z":
+            camera_loc[2] += 0.1;
+            view_mat = mat_math.quick_inverse(mat_math.point_at(camera_loc, target, up));
+            break;
+
+        case "x":
+            camera_loc[2] -= 0.1;
+            view_mat = mat_math.quick_inverse(mat_math.point_at(camera_loc, target, up));
+            break;
     }
 });
 
@@ -123,7 +160,7 @@ function render_loop() {
 function vertex_shader(i) {
     let tri = [];
 
-    // Translate
+    // Model Space -> World Space
     tri[0] = mat_math.mult_vec(world_mat, data[i][0]);
     tri[1] = mat_math.mult_vec(world_mat, data[i][1]);
     tri[2] = mat_math.mult_vec(world_mat, data[i][2]);
@@ -141,8 +178,13 @@ function vertex_shader(i) {
         // Lighting
         let shadow = Math.max(0.1, vec_math.dp(light_dir, norm));
         tri_lighting.push(shadow);
+
+        // World Space -> View Space
+        tri[0] = mat_math.mult_vec(view_mat, tri[0]);
+        tri[1] = mat_math.mult_vec(view_mat, tri[1]);
+        tri[2] = mat_math.mult_vec(view_mat, tri[2]);
     
-        // 3d -> 2d
+        // View Space -> Projected Space
         let depth = [tri[0][2], tri[1][2], tri[2][2]];
     
         tri[0] = mat_math.mult_vec(proj_mat, tri[0]);
