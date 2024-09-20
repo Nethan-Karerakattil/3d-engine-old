@@ -8,18 +8,55 @@ let fov = 90;
 let aspect_ratio = canvas.width / canvas.height;
 let near_plane = 0.1;
 let far_plane = 1000;
-let light_dir = vec_math.norm([0, -1, -1]);
-let fps = 1;
+let rot_x = 0;
+let rot_y = 0;
+let rot_z = 0;
+let light_dir = vec_math.norm([0, 0, -1]);
+let camera_loc = [0, 0, 0];
+let max_fps = 60;
+let fps = 0;
+let show_wireframe = false;
 
 let data = [];
 let proj_tris = [];
-let tri_colors = [];
+let tri_lighting = [];
 let depth_buffer = create_buffer(canvas.width, canvas.height, Infinity);
+let texture = new Texture("./crate_1.jpg");
 
-let world_mat = calc_world_mat([60, 0, 0]);
+let world_mat = calc_world_mat([0, 0, 0]);
 let proj_mat = mat_math.projection(fov, aspect_ratio, near_plane, far_plane);
 
-render_loop();
+document.addEventListener("keydown", ({ key }) => {
+    if (key === "1") {
+        rot_x += 0.1;
+        world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
+    }
+
+    if (key === "2") {
+        rot_y += 0.1;
+        world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
+    }
+
+    if (key === "3") {
+        rot_z += 0.1;
+        world_mat = calc_world_mat([rot_x, rot_y, rot_z]);
+    }
+});
+
+calc_fps();
+function calc_fps() {
+    setTimeout(() => {
+        console.log(fps);
+        fps = 0;
+        calc_fps();
+    }, 1000);
+}
+
+(async () => {
+    await texture.initialize();
+    render_loop();
+})();
+
 function render_loop() {
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -66,19 +103,21 @@ function render_loop() {
                     [x, y],
                 ]);
 
-                if(sum <= area) fragment_shader(i, x, y);
+                if (sum <= area) fragment_shader(i, x, y);
             }
         }
     }
 
-    // wireframe(ctx, proj_tris);
+    if (show_wireframe) wireframe(ctx, proj_tris);
     proj_tris = [];
-    tri_colors = [];
+    tri_lighting = [];
     depth_buffer = create_buffer(canvas.width, canvas.height, Infinity);
+
+    fps++;
 
     setTimeout(() => {
         render_loop();
-    }, 1000 / fps);
+    }, 1000 / max_fps);
 }
 
 function vertex_shader(i) {
@@ -89,38 +128,42 @@ function vertex_shader(i) {
     tri[1] = mat_math.mult_vec(world_mat, data[i][1]);
     tri[2] = mat_math.mult_vec(world_mat, data[i][2]);
 
-    tri[0][2] += 7;
-    tri[1][2] += 7;
-    tri[2][2] += 7;
+    tri[0][2] += 8;
+    tri[1][2] += 8;
+    tri[2][2] += 8;
 
-    // Lighting
+    // Calculate Normal
     let line1 = vec_math.sub(tri[1], tri[0]);
     let line2 = vec_math.sub(tri[2], tri[0]);
     let norm = vec_math.norm(vec_math.cp(line1, line2));
-    let shadow = Math.max(0.1, vec_math.dp(light_dir, norm));
-    tri_colors.push(shadow);
 
-    // 3d -> 2d
-    let depth = [tri[0][2], tri[1][2], tri[2][2]];
+    if(vec_math.dp(norm, vec_math.sub(tri[0], camera_loc)) < 0) {
+        // Lighting
+        let shadow = Math.max(0.1, vec_math.dp(light_dir, norm));
+        tri_lighting.push(shadow);
+    
+        // 3d -> 2d
+        let depth = [tri[0][2], tri[1][2], tri[2][2]];
+    
+        tri[0] = mat_math.mult_vec(proj_mat, tri[0]);
+        tri[1] = mat_math.mult_vec(proj_mat, tri[1]);
+        tri[2] = mat_math.mult_vec(proj_mat, tri[2]);
+    
+        tri[0][2] = depth[0];
+        tri[1][2] = depth[1];
+        tri[2][2] = depth[2];
+    
+        // Scale up points
+        tri[0][0] = Math.round(tri[0][0] * 100 + canvas.width / 2);
+        tri[1][0] = Math.round(tri[1][0] * 100 + canvas.width / 2);
+        tri[2][0] = Math.round(tri[2][0] * 100 + canvas.width / 2);
+    
+        tri[0][1] = Math.round(tri[0][1] * 100 + canvas.height / 2);
+        tri[1][1] = Math.round(tri[1][1] * 100 + canvas.height / 2);
+        tri[2][1] = Math.round(tri[2][1] * 100 + canvas.height / 2);
 
-    tri[0] = mat_math.mult_vec(proj_mat, tri[0]);
-    tri[1] = mat_math.mult_vec(proj_mat, tri[1]);
-    tri[2] = mat_math.mult_vec(proj_mat, tri[2]);
-
-    tri[0][2] = depth[0];
-    tri[1][2] = depth[1];
-    tri[2][2] = depth[2];
-
-    // Scale up points
-    tri[0][0] = Math.round(tri[0][0] * 100 + canvas.width / 2);
-    tri[1][0] = Math.round(tri[1][0] * 100 + canvas.width / 2);
-    tri[2][0] = Math.round(tri[2][0] * 100 + canvas.width / 2);
-
-    tri[0][1] = Math.round(tri[0][1] * 100 + canvas.height / 2);
-    tri[1][1] = Math.round(tri[1][1] * 100 + canvas.height / 2);
-    tri[2][1] = Math.round(tri[2][1] * 100 + canvas.height / 2);
-
-    proj_tris.push(tri);
+        proj_tris.push(tri);
+    }
 }
 
 function fragment_shader(i, x, y) {
@@ -144,20 +187,19 @@ function fragment_shader(i, x, y) {
         z2 * (x - x3) * (y - y1) -
         z2 * (x - x1) * (y - y3) -
         z3 * (x - x2) * (y - y1) -
-        z1 * (x - x3) * (y - y2)
-    ) /
-    (
-        (x - x1) * (y - y2) +
-        (x - x2) * (y - y3) +
-        (x - x3) * (y - y1) -
-        (x - x1) * (y - y3) -
-        (x - x2) * (y - y1) -
-        (x - x3) * (y - y2)
-    );
+        z1 * (x - x3) * (y - y2)) /
+        (
+            (x - x1) * (y - y2) +
+            (x - x2) * (y - y3) +
+            (x - x3) * (y - y1) -
+            (x - x1) * (y - y3) -
+            (x - x2) * (y - y1) -
+            (x - x3) * (y - y2)
+        );
 
     // Color the pixel
-    if(depth_buffer[x][y] > z){
-        ctx.fillStyle = `rgb(${Math.round(tri_colors[i] * 256)}, ${Math.round(tri_colors[i] * 256)}, ${Math.round(tri_colors[i] * 256)})`;
+    if (depth_buffer[x][y] > z) {
+        ctx.fillStyle = `rgb(${Math.round(tri_lighting[i] * 256)}, ${Math.round(tri_lighting[i] * 256)}, ${Math.round(tri_lighting[i] * 256)})`;
         ctx.fillRect(x, y, 1, 1);
         depth_buffer[x][y] = z;
     }
