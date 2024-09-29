@@ -17,42 +17,93 @@ function wireframe(ctx, proj_tris) {
 }
 
 /**
- * 
+ * Loads a .obj file
  * @param {string} text 
  * @returns {array}
  */
 function load_obj(text) {
-    let verts = [];
-    let faces = [];
+    let v = [];
+    let vt = [];
+    let vn = [];
+    let f0 = [];
+    let f1 = [];
+    let f2 = [];
 
     let lines = text.split("\n");
-    for(let i = 0; i < lines.length; i++){
-        switch(lines[i][0]){
+    for (let i = 0; i < lines.length; i++) {
+        lines[i] = lines[i].split(" ");
+
+        switch (lines[i][0]) {
             case "v":
-                let vert = lines[i].split(" ");
-                vert.splice(0, 1);
+                lines[i].splice(0, 1);
 
-                for(let j = 0; j < vert.length; j++) vert[j] = parseFloat(vert[j]);
-                verts.push(vert);
+                for (let j = 0; j < lines[i].length; j++) lines[i][j] = parseFloat(lines[i][j]);
+                v.push(lines[i]);
                 break;
-            
-            case "f":
-                let face = lines[i].split(" ");
-                face.splice(0, 1);
 
-                for(let j = 0; j < face.length; j++) face[j] = parseInt(face[j]);
-                faces.push(face);
+            case "vt":
+                lines[i].splice(0, 1);
+
+                for (let j = 0; j < lines[i].length; j++) lines[i][j] = parseFloat(lines[i][j]);
+                vt.push(lines[i]);
+                break;
+
+            case "f":
+                lines[i].splice(0, 1);
+
+                if (lines[i].length == 3) {
+                    for (let j = 0; j < lines[i].length; j++) {
+                        lines[i][j] = lines[i][j].split("/");
+
+                        lines[i][j][0] = parseInt(lines[i][j][0]);
+                        lines[i][j][1] = parseInt(lines[i][j][1]);
+                        lines[i][j][2] = parseInt(lines[i][j][2]);
+                    }
+
+                    f0.push([lines[i][0][0], lines[i][1][0], lines[i][2][0]]);
+                    if (lines[i][0][1]) f1.push([lines[i][0][1], lines[i][1][1], lines[i][2][1]]);
+                    if (lines[i][0][2]) f2.push([lines[i][0][2], lines[i][1][2], lines[i][2][2]]);
+
+                } else if (lines[i].length == 4) {
+                    for (let j = 0; j < lines[i].length; j++) {
+                        lines[i][j] = lines[i][j].split("/");
+
+                        lines[i][j][0] = parseInt(lines[i][j][0]);
+                        lines[i][j][1] = parseInt(lines[i][j][1]);
+                        lines[i][j][2] = parseInt(lines[i][j][2]);
+                    }
+
+                    f0.push([lines[i][0][0], lines[i][1][0], lines[i][3][0]]);
+                    f0.push([lines[i][1][0], lines[i][2][0], lines[i][3][0]]);
+
+                    if (lines[i][0][1]){
+                        f1.push([lines[i][0][1], lines[i][1][1], lines[i][3][1]]);
+                        f1.push([lines[i][1][1], lines[i][2][1], lines[i][3][1]]);
+                    }
+
+                    if (lines[i][0][2]) {
+                        f2.push([lines[i][0][2], lines[i][1][2], lines[i][3][2]]);
+                        f2.push([lines[i][1][2], lines[i][2][2], lines[i][3][2]]);
+                    }
+                }
                 break;
         }
     }
 
     let new_tris = [];
-    for(let i = 0; i < faces.length; i++){
+    for (let i = 0; i < f0.length; i++) {
         new_tris[i] = [];
-        new_tris[i][0] = verts[faces[i][0] - 1];
-        new_tris[i][1] = verts[faces[i][1] - 1];
-        new_tris[i][2] = verts[faces[i][2] - 1];
+        new_tris[i][0] = v[f0[i][0] - 1];
+        new_tris[i][1] = v[f0[i][1] - 1];
+        new_tris[i][2] = v[f0[i][2] - 1];
     }
 
     data = new_tris;
+}
+
+function calc_world_mat(rot) {
+    let world_mat = mat_math.make_identity();
+    world_mat = mat_math.mult_mat(mat_math.rot_x(rot[0]), mat_math.rot_y(rot[1]));
+    world_mat = mat_math.mult_mat(world_mat, mat_math.rot_z(rot[2]));
+    return world_mat;
 }
