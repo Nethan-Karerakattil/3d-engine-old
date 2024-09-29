@@ -11,6 +11,7 @@ let aspectRatio = canvas.width / canvas.height;
 let near_plane = 0.1;
 let far_plane = 1000;
 let fps = 5;
+let draw_wireframe = false;
 
 let proj_tris = [];
 
@@ -22,17 +23,13 @@ function render_loop() {
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for(let i = 0; i < data.length; i++){
+    for (let i = 0; i < data.length; i++) {
         vertex_shader(i);
     }
 
-    for(let x = 0; x < canvas.width; x++){
-        for(let y = 0; y < canvas.height; y++){
-            fragment_shader(x, y);
-        }
-    }
+    for (let i = 0; i < proj_tris.length; i++) draw_triangle(proj_tris[i], ctx);
 
-    wireframe(ctx, proj_tris);
+    if(draw_wireframe) wireframe(ctx, proj_tris);
     proj_tris = [];
 
     setTimeout(() => {
@@ -40,10 +37,6 @@ function render_loop() {
     }, 1000 / fps);
 }
 
-/**
- * Converts 3d points to 2d points
- * @param {integer} i
- */
 function vertex_shader(i) {
 
     // Model Space -> World Space
@@ -52,9 +45,9 @@ function vertex_shader(i) {
     proj_tri[1] = mat_math.mult_vec(world_mat, data[i][1]);
     proj_tri[2] = mat_math.mult_vec(world_mat, data[i][2]);
 
-    proj_tri[0][2] += 3;
-    proj_tri[1][2] += 3;
-    proj_tri[2][2] += 3;
+    proj_tri[0][2] += 8;
+    proj_tri[1][2] += 8;
+    proj_tri[2][2] += 8;
 
     // 3d -> 2d
     proj_tri[0] = mat_math.mult_vec(proj_mat, proj_tri[0]);
@@ -73,11 +66,6 @@ function vertex_shader(i) {
     proj_tris.push(proj_tri);
 }
 
-/**
- * Draws pixels with rasterization & interpolation
- * @param {integer} x 
- * @param {integer} y 
- */
 function fragment_shader(x, y) {
 
 }
