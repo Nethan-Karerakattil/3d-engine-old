@@ -59,7 +59,7 @@ const vec_math = {
      * @returns {integer} lenth of the vector
      */
     len: (v) => {
-        return Math.sqrt(vec_math.vectorDotProduct(v, v));
+        return Math.sqrt(vec_math.dp(v, v));
     },
 
     /**
@@ -68,7 +68,7 @@ const vec_math = {
      * @returns {vector} Normalized vector
      */
     norm: (v) => {
-        const l = vec_math.vectorLength(v);
+        const l = vec_math.len(v);
         return [v[0] / l, v[1] / l, v[2] / l];
     }
 }
