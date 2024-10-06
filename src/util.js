@@ -129,6 +129,7 @@ function calc_world_mat(rot) {
  * @param {shader} frag_shader Fragment shader function 
  */
 function draw_triangle(tri, uv, frag_shader) {
+
     ctx.fillStyle = "rgb(255, 255, 255)";
 
     let x1 = tri[0][0];
@@ -248,9 +249,9 @@ function draw_triangle(tri, uv, frag_shader) {
         }
     }
 
-    dy1 = y3 - y2;
     dx1 = x3 - x2;
-    du1 = v3 - v2;
+    dy1 = y3 - y2;
+    du1 = u3 - u2;
     dv1 = v3 - v2;
     dw1 = w3 - w2;
 

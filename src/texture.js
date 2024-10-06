@@ -32,7 +32,7 @@ class Texture {
         y = Math.round(y * this.image.height);
 
         return [
-            this.data[(this.image.width * y) + x * 4],
+            this.data[((this.image.width * y) + x) * 4],
             this.data[((this.image.width * y) + x) * 4 + 1],
             this.data[((this.image.width * y) + x) * 4 + 2],
             this.data[((this.image.width * y) + x) * 4 + 3]

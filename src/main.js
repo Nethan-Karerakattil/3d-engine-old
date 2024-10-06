@@ -11,22 +11,52 @@ let fov = 90;
 let aspectRatio = canvas.width / canvas.height;
 let near_plane = 0.1;
 let far_plane = 1000;
-let fps = 5;
+let fps = 60;
+let true_fps = 0;
 let draw_wireframe = false;
 let camera_loc = [0, 0, 0];
-let texture = new Texture("crate_1.jpg");
+let texture = new Texture("box-texture.jpg");
 let c_buffer = ctx.createImageData(canvas.width, canvas.height);
 
 let proj_tris = [];
 let proj_texs = [];
 
-let world_mat = calc_world_mat([60, 30, 0]);
+let rotation = [0, 0, 0];
+let world_mat = calc_world_mat(rotation);
 let proj_mat = mat_math.projection(fov, aspectRatio, near_plane, far_plane);
+
+document.addEventListener("keydown", ({ key }) => {
+    switch(key) {
+        case "1":
+            rotation[0] += 0.1;
+            world_mat = calc_world_mat(rotation);
+            break;
+
+        case "2":
+            rotation[1] += 0.1;
+            world_mat = calc_world_mat(rotation);
+            break;
+
+        case "3":
+            rotation[2] += 0.1;
+            world_mat = calc_world_mat(rotation);
+            break;
+    }
+});
 
 (async () => {
     await texture.init();
     render_loop();
 })();
+
+calc_fps();
+function calc_fps() {
+    setTimeout(() => {
+        console.log(true_fps);
+        true_fps = 0;
+        calc_fps();
+    }, 1000);
+}
 
 function render_loop() {
     // Call Vertex Shader
@@ -43,9 +73,11 @@ function render_loop() {
 
     // Reset
     proj_tris = [];
+    proj_texs = [];
     c_buffer = ctx.createImageData(canvas.width, canvas.height);
 
     // Wait till next frame
+    true_fps++;
     setTimeout(() => {
         render_loop();
     }, 1000 / fps);
@@ -72,11 +104,19 @@ function vertex_shader(i) {
     if (vec_math.dp(norm, vec_math.sub(proj_tri[0], camera_loc)) < 0) {
 
         // 3d -> 2d
+        proj_tri[0][3] = 1;
+        proj_tri[1][3] = 1;
+        proj_tri[2][3] = 1;
+
         proj_tri[0] = mat_math.mult_vec(proj_mat, proj_tri[0]);
         proj_tri[1] = mat_math.mult_vec(proj_mat, proj_tri[1]);
         proj_tri[2] = mat_math.mult_vec(proj_mat, proj_tri[2]);
 
         // Perspective
+        proj_tri[0] = vec_math.div(proj_tri[0], proj_tri[0][3]);
+        proj_tri[1] = vec_math.div(proj_tri[1], proj_tri[1][3]);
+        proj_tri[2] = vec_math.div(proj_tri[2], proj_tri[2][3]);
+
         proj_tex[0][0] /= proj_tri[0][3];
         proj_tex[1][0] /= proj_tri[1][3];
         proj_tex[2][0] /= proj_tri[2][3];
